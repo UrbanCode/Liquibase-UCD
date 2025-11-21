@@ -21,17 +21,6 @@ def username = props['username']
 def password = props['password']
 def changeLogFile = props['changeLogFile']
 
-println ' Data: command: ' + command
-println ' Data: driver: ' + driver
-println ' Data: driverClasspath: ' + driverClasspath
-println ' Data: jdbcURL: ' + jdbcURL
-println ' Data: username: ' + username
-println ' Data: password: ' + password
-println ' Data: changeLogFile: ' + changeLogFile
-//println ' Data: tag: ' + tag
-//println ' Data: rollbackType: ' + rollbackType
-//println ' Data: preview: ' + preview
-
 def lqcmd = command + " "
 lqcmd = lqcmd + "--driver=" + driver + " "
 lqcmd = lqcmd + "--classpath=" + driverClasspath + " "
