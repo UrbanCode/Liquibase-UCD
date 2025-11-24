@@ -61,11 +61,15 @@ repositories {
 
 dependencies {
     // groovy-plugin-utils pulls down groovy-all as a transitive dependency for the 'compile' configuration
-    compile 'com.ibm.urbancode.plugins:groovy-plugin-utils:+'
-    compile 'com.ibm.urbancode.util:i18n-scraper:+'
+    implementation 'com.ibm.urbancode.plugins:groovy-plugin-utils:+'
+    implementation 'com.ibm.urbancode.util:i18n-scraper:+'
 
     // This compiles the i18n-scraper script
-    compile localGroovy()
+    implementation localGroovy()
+}
+
+configurations {
+    compileClasspath.extendsFrom implementation
 }
 
 sourceSets {
@@ -87,13 +91,15 @@ sourceSets {
 }
 
 compileJava {
-    dependsOn 'extractGPU', 'copyi18n'
+    dependsOn 'extractGPU', 'copyi18n', 'copyDeps'
 }
-
+compileGroovy {
+    include "i18n-scraper.groovy"
+}
 task copyDeps(type: Copy) {
     into 'lib'
     copy {
-        from configurations.runtime
+        from configurations.runtimeClasspath
         include { target ->
             return target.file.path.contains("com.ibm.urbancode")
         }
@@ -103,7 +109,7 @@ task copyDeps(type: Copy) {
         }
     }
     copy {
-        from configurations.runtime
+        from configurations.runtimeClasspath
         exclude { target ->
             return target.file.path.contains("com.ibm.urbancode")
         }
@@ -150,9 +156,9 @@ task distPlugin(type: Zip, dependsOn: ['compileGroovy', 'gatherI18n']) {
         exclude 'META-INF', 'i18n-scraper.groovy'
     }
     if (travisCommit) {
-        archiveName = "${pluginName}-${version}.zip"
+        archiveFileName = "${pluginName}-${version}.zip"
     } else {
-        archiveName = "${pluginName}-dev.zip"
+        archiveFileName = "${pluginName}-dev.zip"
     }
 }
 
@@ -160,13 +166,19 @@ task gatherI18n(type: JavaExec) {
     delete buildLocaleDir
     mkdir buildLocaleDir
 
-    main = 'i18n-scraper'
+    mainClass.set('i18n-scraper')
     args 'build/locale/en.properties'
     classpath = sourceSets.main.runtimeClasspath
 }
 
 task cleanAll(dependsOn: ['clean', 'cleanCopyDeps', 'cleanDistPlugin', 'cleanGatherI18n'])
+tasks.named("extractGPU") {
+    dependsOn("copyDeps")
+}
 
+tasks.named("copyi18n") {
+    dependsOn("copyDeps")
+}
 String stripVersion(String fileNameWithVersion) {
     String ext = fileNameWithVersion.substring(fileNameWithVersion.lastIndexOf("."),fileNameWithVersion.length())
     int end = fileNameWithVersion.lastIndexOf("-"); //assumes that: name-version.ext. Will not work with name-version-SNAPSHOT.ext
